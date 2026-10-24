@@ -4957,7 +4957,10 @@
         document.getElementById('examScoreText').textContent = examScore + ' из 30 (' + Math.round((examScore / 30) * 100) + '%)';
       }
     }
-
+} else {
+        document.getElementById('examResultBadge').style.display = 'none';   
+      }
+    
     function showExamQuestion(idx) {
       examCurrentIdx = idx;
       const q = EXAM_QUESTIONS[idx];
@@ -5031,6 +5034,7 @@
     });
 
     function finishTestPrep() {
+      if (examTimerInterval) clearInterval(examTimerInterval);
       let correct = 0;
       EXAM_QUESTIONS.forEach(q => {
         if (examAnswers[q.id] === q.correctIndex) correct++;
@@ -5058,11 +5062,12 @@
 
     let examTimerInterval = null;
     function startExamTimer() {
+      if (examTimerInterval) clearInterval(examTimerInterval);
       if (examSubmitted) {
         document.getElementById('examTimerBadge').textContent = 'Завершен';
         return;
       }
-      if (examTimerInterval) clearInterval(examTimerInterval);
+      
       examTimerInterval = setInterval(() => {
         if (examTimeLeft <= 0) {
           clearInterval(examTimerInterval);
