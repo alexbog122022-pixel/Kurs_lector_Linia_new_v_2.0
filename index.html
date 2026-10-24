@@ -5192,30 +5192,94 @@
       }
     }
 
-    function startFinalExam() {
+        async function startFinalExam() {
+      const ln = finalExamLastName.value.trim();
+      const fn = finalExamFirstName.value.trim();
+      const mn = finalExamMiddleName.value.trim();
+      const gr = finalExamGroup.value.trim();
+
+      if (!ln || !fn || !gr) {
+        alert('Заполните фамилию, имя и группу!');
+        return;
+      }
+
+      const fullFio = ln + ' ' + fn + (mn ? ' ' + mn : '') + ' (' + gr + ')';
+      const fioForServer = ln + ' ' + fn + (mn ? ' ' + mn : '') + ' ' + gr;
+
+      // ⬇️ Блокируем кнопку и показываем индикатор
+      const originalBtnHtml = startFinalExamBtn.innerHTML;
+      startFinalExamBtn.disabled = true;
+      startFinalExamBtn.innerHTML = '⏳ Проверка регистрации...';
+      startFinalExamBtn.style.opacity = '0.7';
+
+      const payload = { fio: fioForServer, score: 0, is_start: true, version: 'v2' };
+
+      let studentFound = false;
+      let serverError = '';
+      let corsFailed = false;
+
+      // Попытка 1: обычный CORS-запрос — читаем ответ сервера
+      try {
+        const response = await fetch(EXAM_CONFIG.apiScriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json().catch(() => null);
+
+        if (data && data.success === false && data.error) {
+          serverError = data.error;
+          studentFound = false;
+        } else {
+          studentFound = true;
+        }
+      } catch (err) {
+        console.warn('CORS verification failed:', err);
+        corsFailed = true;
+
+        // Попытка 2: no-cors — хотя бы «сжечь попытку» на сервере, но ответ не прочитать
+        try {
+          await fetch(EXAM_CONFIG.apiScriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+          });
+        } catch (e2) {
+          console.error('no-cors also failed:', e2);
+        }
+      }
+
+      // ⬆️ Восстанавливаем кнопку
+      startFinalExamBtn.disabled = false;
+      startFinalExamBtn.innerHTML = originalBtnHtml;
+      startFinalExamBtn.style.opacity = '1';
+
+      // Обработка результата проверки
+      if (corsFailed) {
+        const proceed = confirm(
+          '⚠️ Не удалось проверить регистрацию на сервере ведомости.\n\n' +
+          'Возможные причины:\n' +
+          '• Нет доступа к интернету\n' +
+          '• Технические работы на сервере\n\n' +
+          'Продолжить экзамен на свой риск? Результат может быть не засчитан.'
+        );
+        if (!proceed) return;
+      } else if (!studentFound) {
+        alert(
+          '🚫 Студент не найден в ведомости!\n\n' +
+          (serverError || 'Проверьте правильность ввода ФИО и группы.') + '\n\n' +
+          'Обратитесь к ведущему преподавателю (старший преподаватель Сергей Юрьевич), чтобы вас зарегистрировали.'
+        );
+        return;   // ⬅️ ГЛАВНОЕ: тест НЕ запускаем
+      }
+
+      // ⬇️ Только теперь стартуем тест
       isFinalExamRunning = true;
       finalExamAnswers = {};
       finalExamCurrentIdx = 0;
       finalExamTimeLeft = 45 * 60;
 
-      const ln = finalExamLastName.value.trim();
-      const fn = finalExamFirstName.value.trim();
-      const mn = finalExamMiddleName.value.trim();
-      const gr = finalExamGroup.value.trim();
-      
-      const fullFio = ln + ' ' + fn + (mn ? ' ' + mn : '') + ' (' + gr + ')'; // Для шапки
-      const fioForServer = ln + ' ' + fn + (mn ? ' ' + mn : '') + ' ' + gr; // Для сервера
-
-      // Сжигаем попытку на сервере ДО начала теста
-      const payload = { fio: fioForServer, score: 0, is_start: true, version: 'v2' };
-      fetch(EXAM_CONFIG.apiScriptUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-      }).catch(e => console.log('Фоновая отправка не удалась'));
-
-      // Перемешиваем вопросы
       const shuffled = shuffleArray(FINAL_EXAM_QUESTIONS).map((q) => {
         const correctText = q.options[q.correctIndex];
         const shOptions = shuffleArray(q.options);
@@ -5232,7 +5296,6 @@
       document.getElementById('examAuthCardScreen').style.display = 'none';
       document.getElementById('examTestingScreen').style.display = 'block';
       document.getElementById('examResultScreen').style.display = 'none';
-
       document.getElementById('finalExamStudentHeader').textContent = 'Студент: ' + fullFio;
 
       renderFinalExamNavGrid();
