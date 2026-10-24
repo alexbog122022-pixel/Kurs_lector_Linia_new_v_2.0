@@ -4926,7 +4926,7 @@
       startExamTimer();
     }
 
-    function renderExamNavGrid() {
+        function renderExamNavGrid() {
       const grid = document.getElementById('examNavGrid');
       grid.innerHTML = '';
       EXAM_QUESTIONS.forEach((q, idx) => {
@@ -4956,9 +4956,9 @@
         document.getElementById('examGradeText').textContent = examGrade;
         document.getElementById('examScoreText').textContent = examScore + ' из 30 (' + Math.round((examScore / 30) * 100) + '%)';
       } else {
-        document.getElementById('examResultBadge').style.display = 'none';   
+        document.getElementById('examResultBadge').style.display = 'none';
       }
-    } 
+    }
     function showExamQuestion(idx) {
       examCurrentIdx = idx;
       const q = EXAM_QUESTIONS[idx];
