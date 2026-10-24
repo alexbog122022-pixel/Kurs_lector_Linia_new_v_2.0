@@ -1665,6 +1665,9 @@
               </div>
               <button id="goToGradebookFromTestBtn" class="btn-secondary" style="width: 100%; justify-content: center; padding: 6px; font-size: 11px;">
                 Открыть ведомость успеваемости →
+              <button id="resetTestPrepBtn" class="btn-secondary" style="width: 100%; justify-content: center; padding: 6px; font-size: 11px;">
+                🔄 Пройти тест заново
+              </button>
               </button>
             </div>
           </div>
@@ -5872,7 +5875,29 @@
         if (q) handleSendAiChat(q);
       });
     });
-
+    // ⬇️⬇️⬇️ ВСТАВИТЬ ЗДЕСЬ ⬇️⬇️⬇️
+    const resetTestPrepBtn = document.getElementById('resetTestPrepBtn');
+    if (resetTestPrepBtn) {
+      resetTestPrepBtn.addEventListener('click', () => {
+        if (!confirm('Сбросить результаты теста подготовки и начать заново?')) return;
+        examAnswers = {};
+        examSubmitted = false;
+        examScore = 0;
+        examGrade = '';
+        examTimeLeft = 45 * 60;
+        examCurrentIdx = 0;
+        localStorage.removeItem('lms_exam_answers');
+        localStorage.removeItem('lms_exam_submitted');
+        localStorage.removeItem('lms_exam_score');
+        localStorage.removeItem('lms_exam_grade');
+        localStorage.removeItem('lms_exam_time_left');
+        if (examTimerInterval) clearInterval(examTimerInterval);
+        loadTestPrep();
+        updateTotalProgress();
+        updateGradebookUI();
+      });
+    }
+    
     // ИНИЦИАЛИЗАЦИЯ
     if (krLockIcon && isKrUnlocked) krLockIcon.textContent = '🔓';
     if (examLockIcon && isExamUnlocked) examLockIcon.textContent = '🔓';
