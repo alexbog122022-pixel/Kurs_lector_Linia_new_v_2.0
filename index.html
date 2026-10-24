@@ -1665,9 +1665,9 @@
               </div>
               <button id="goToGradebookFromTestBtn" class="btn-secondary" style="width: 100%; justify-content: center; padding: 6px; font-size: 11px;">
                 Открыть ведомость успеваемости →
+              </button>
               <button id="resetTestPrepBtn" class="btn-secondary" style="width: 100%; justify-content: center; padding: 6px; font-size: 11px;">
                 🔄 Пройти тест заново
-              </button>
               </button>
             </div>
           </div>
@@ -5584,14 +5584,15 @@
       let isLimitReached = false;
 
       // 1. Отправка POST-запроса в Google Таблицу через Web App
-      try {
+     
         const studentPayload = {
           lastName: ln,
           firstName: fn,
           middleName: mn,
           group: gr
         };
-
+      
+      try {
         const response = await fetch(GOOGLE_SCRIPT_URL, {
           method: 'POST',
           headers: {
