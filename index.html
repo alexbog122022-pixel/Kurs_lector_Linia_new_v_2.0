@@ -1799,13 +1799,19 @@
                 <div style="font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
                   <span>⚠️</span> Правила проведения экзамена:
                 </div>
-                <ul style="padding-left: 18px; margin: 0;">
-                  <li>Тест состоит из <b>30 случайных вопросов</b> по всем темам лекций. <b>ПОПЫТКИ ВСЕГО ДВЕ (2)</b>.</li>
-                  <li>Время на выполнение: <b>45 минут</b>. Вопросы и варианты ответов перемешиваются при каждом запуске.</li>
-                  <li><b>Анти-чит контроль:</b> выделение текста, контекстное меню мыши и горячие клавиши копирования/разработчика заблокированы.</li>
-                  <li>Результаты передаются на сервер ведомости института автоматически после завершения.</li>
-                </ul>
-              </div>
+                  <ul style="padding-left: 18px; margin: 0;">
+    <li style="background: #fef3c7; border-left: 3px solid #d97706; padding: 6px 8px; margin: 0 0 8px -8px; border-radius: 4px;">
+      <b>⚠️ ВАЖНО — формат ввода ФИО и группы:</b><br>
+      • <b>Фамилия, Имя, Отчество</b> — строго как в официальном списке группы, каждое слово с большой буквы.<br>
+      • <b>Группа</b> — точно в формате <code style="background: #fff; padding: 1px 6px; border-radius: 4px; font-weight: 700;">СОД 2.23-1</code> (с пробелом после «СОД» и точкой после «2»).<br>
+      • <b>Проверьте раскладку!</b> Буквы «С», «О», «Д» и «Т», «е», «с», «т» — <u>русские</u>, не английские.<br>
+      • Если данные не совпадут с реестром — экзамен <b>не запустится</b>. В этом случае обратитесь к преподавателю (старший преподаватель Сергей Юрьевич).
+    </li>
+    <li>Тест состоит из <b>30 случайных вопросов</b> по всем темам лекций. <b>ПОПЫТКИ ВСЕГО ДВЕ (2)</b>.</li>
+    <li>Время на выполнение: <b>45 минут</b>. Вопросы и варианты ответов перемешиваются при каждом запуске.</li>
+    <li><b>Анти-чит контроль:</b> выделение текста, контекстное меню мыши и горячие клавиши копирования/разработчика заблокированы.</li>
+    <li>Результаты передаются на сервер ведомости института автоматически после завершения.</li>
+  </ul>
 
                             <!-- НОВЫЕ 4 ПОЛЯ (Фамилия, Имя, Отчество, Группа) -->
               <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px;">
@@ -1826,7 +1832,7 @@
                   </div>
                   <div style="flex: 1;">
                     <label style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px;">Группа *</label>
-                    <input type="text" id="finalExamGroup" class="modal-input" placeholder="ИКС-21" style="padding: 10px 14px; font-size: 13px;">
+                    <input type="text" id="finalExamGroup" class="modal-input" placeholder="сод 2.23-1" style="padding: 10px 14px; font-size: 13px;">
                   </div>
                 </div>
               </div>
@@ -1996,7 +2002,7 @@
         </div>
         <div class="modal-form-group">
           <label>Учебная группа *</label>
-          <input type="text" id="authGroup" class="modal-input" placeholder="ИКС-21" required>
+          <input type="text" id="authGroup" class="modal-input" placeholder="сод 2.23-1" required>
         </div>
         <button type="submit" id="submitAuthBtn" class="btn-emerald" style="width: 100%; padding: 10px; justify-content: center; font-size: 13px;">
           Войти на портал
@@ -5651,27 +5657,31 @@
 
       // 1. Отправка POST-запроса в Google Таблицу через Web App
      
-        const studentPayload = {
-          lastName: ln,
-          firstName: fn,
-          middleName: mn,
-          group: gr
-        };
-      
+              const studentPayload = {
+        fio: ln + ' ' + fn + (mn ? ' ' + mn : '') + ' ' + gr,   // ⬅️ ДОБАВЛЕНО
+        lastName: ln,
+        firstName: fn,
+        middleName: mn,
+        group: gr
+      };
+
       try {
         const response = await fetch(GOOGLE_SCRIPT_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'text/plain;charset=utf-8'
-          },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(studentPayload)
         });
 
         const result = await response.json().catch(() => null);
 
-        if (result && result.status === 'limit_reached') {
-          isLimitReached = true;
-          authError.textContent = 'Достигнут лимит регистраций курса (максимум 30 пользователей). Обратитесь к преподавателю';
+        if (!result) {
+          throw new Error('Сервер не вернул ответ');
+        }
+
+        // ⬇️ Лимит 30
+        if (result.status === 'limit_reached') {
+          authError.textContent = result.message
+            || 'Достигнут лимит регистраций курса (максимум 30 пользователей). Обратитесь к преподавателю';
           authError.style.display = 'block';
           if (authLoadingText) authLoadingText.style.display = 'none';
           submitAuthBtn.disabled = false;
@@ -5679,40 +5689,33 @@
           return;
         }
 
-        if (result && result.count !== undefined) {
+        // ⬇️ НОВОЕ: студент не найден / ошибка сервера — блокируем
+        if (result.success === false || result.status === 'error' || result.status === 'not_found') {
+          authError.textContent = result.message
+            || 'Студент не найден в списке группы. Обратитесь к преподавателю.';
+          authError.style.display = 'block';
+          if (authLoadingText) authLoadingText.style.display = 'none';
+          submitAuthBtn.disabled = false;
+          submitAuthBtn.textContent = 'Войти на портал';
+          return;   // ⬅️ НЕ регистрируем локально
+        }
+
+        // ⬇️ Успех — обновляем счётчик
+        if (result.count !== undefined) {
           authLimitCounterText.textContent = 'Регистраций: ' + result.count + ' из 30';
         }
-            } catch (err) {
-        console.warn('CORS failed, retry with no-cors:', err);
-        // ⬇️ НОВЫЙ fallback: гарантированная отправка без чтения ответа
-        try {
-          await fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(studentPayload)
-          });
-          console.log('Fallback no-cors send OK');
-        } catch (e2) {
-          console.error('no-cors send also failed:', e2);
-        }
-
-        // Резервная проверка при сбоях связи
-        const userKey = (ln + ' ' + fn + ' ' + gr).toLowerCase();
-        const isExisting = registeredStudents.some(u => u.toLowerCase() === userKey);
-
-        if (!isExisting && registeredStudents.length >= 30) {
-          isLimitReached = true;
-          authError.textContent = 'Достигнут лимит регистраций курса (максимум 30 пользователей). Обратитесь к преподавателю';
-          authError.style.display = 'block';
-          if (authLoadingText) authLoadingText.style.display = 'none';
-          submitAuthBtn.disabled = false;
-          submitAuthBtn.textContent = 'Войти на портал';
-          return;
-        }
+      } catch (err) {
+        console.error('Ошибка регистрации:', err);
+        // ⚠️ Убрали fallback no-cors — без проверки не пускаем
+        authError.textContent = 'Не удалось проверить регистрацию на сервере. Проверьте интернет и попробуйте снова. Если ошибка повторяется — обратитесь к преподавателю.';
+        authError.style.display = 'block';
+        if (authLoadingText) authLoadingText.style.display = 'none';
+        submitAuthBtn.disabled = false;
+        submitAuthBtn.textContent = 'Войти на портал';
+        return;   // ⬅️ БЛОКИРУЕМ вход
       }
 
-      // 2. Если ответ success (или успешный ответ), сохраняем в localStorage и пускаем на портал
+      // ⬇️ Только после успешной проверки — локальная регистрация (без изменений)
       const userKey = (ln + ' ' + fn + ' ' + gr).toLowerCase();
       const isExisting = registeredStudents.some(u => u.toLowerCase() === userKey);
 
@@ -5726,7 +5729,6 @@
       authModal.classList.remove('active');
       updateStudentUI();
 
-      // После первого чистого входа сразу открываем инструкцию
       switchView('instruction');
       contentToolbarTitle.textContent = 'Инструкция пользователя по работе с курсом';
     });
