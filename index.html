@@ -4955,12 +4955,10 @@
         document.getElementById('examResultBadge').style.display = 'block';
         document.getElementById('examGradeText').textContent = examGrade;
         document.getElementById('examScoreText').textContent = examScore + ' из 30 (' + Math.round((examScore / 30) * 100) + '%)';
-      }
-    }
-} else {
+      } else {
         document.getElementById('examResultBadge').style.display = 'none';   
       }
-    
+    } 
     function showExamQuestion(idx) {
       examCurrentIdx = idx;
       const q = EXAM_QUESTIONS[idx];
