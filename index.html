@@ -1837,7 +1837,9 @@
                   Начать итоговый экзамен →
                 </button>
               </div>
-
+            </div>   
+          </div>     
+          
           <!-- ЭКРАН 2: САМ ИНТЕРАКТИВНЫЙ ТЕСТ (examTestingScreen) -->
           <div id="examTestingScreen" class="exam-unselectable" style="display: none; padding: 20px; flex: 1; max-width: 900px; margin: 0 auto; width: 100%;">
             <!-- Информационная плашка тестирования -->
@@ -5110,7 +5112,9 @@
     if (finalExamLastName) finalExamLastName.addEventListener('input', checkFinalExamAuthValid);
     if (finalExamFirstName) finalExamFirstName.addEventListener('input', checkFinalExamAuthValid);
     if (finalExamGroup) finalExamGroup.addEventListener('input', checkFinalExamAuthValid);
-
+    if (startFinalExamBtn) {
+      startFinalExamBtn.addEventListener('click', startFinalExam);
+    }
     function getFinalExamGrade(score) {
       if (score >= 29) return 'Отлично';
       if (score >= 27) return 'Хорошо';
@@ -5608,8 +5612,21 @@
         if (result && result.count !== undefined) {
           authLimitCounterText.textContent = 'Регистраций: ' + result.count + ' из 30';
         }
-      } catch (err) {
-        console.warn('Google Script request warning:', err);
+            } catch (err) {
+        console.warn('CORS failed, retry with no-cors:', err);
+        // ⬇️ НОВЫЙ fallback: гарантированная отправка без чтения ответа
+        try {
+          await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(studentPayload)
+          });
+          console.log('Fallback no-cors send OK');
+        } catch (e2) {
+          console.error('no-cors send also failed:', e2);
+        }
+
         // Резервная проверка при сбоях связи
         const userKey = (ln + ' ' + fn + ' ' + gr).toLowerCase();
         const isExisting = registeredStudents.some(u => u.toLowerCase() === userKey);
@@ -5622,12 +5639,6 @@
           submitAuthBtn.disabled = false;
           submitAuthBtn.textContent = 'Войти на портал';
           return;
-        }
-      } finally {
-        if (!isLimitReached) {
-          if (authLoadingText) authLoadingText.style.display = 'none';
-          submitAuthBtn.disabled = false;
-          submitAuthBtn.textContent = 'Войти на портал';
         }
       }
 
