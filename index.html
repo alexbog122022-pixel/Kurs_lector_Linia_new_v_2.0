@@ -4572,7 +4572,7 @@
 ];
     const EXAM_CONFIG = {
   "passwordHash": "0c4f2da2232996d29378a49646f58ae5e7a16f0f5257913b2b4b15233f9b0dd1",
-  "apiScriptUrl": "https://script.google.com/macros/s/AKfycbwY9kkOyFFQTeaX8L_pJc6X-j94Hkcm0yCsiRvV3youj8mYSBSk9wZ9CybivywTgNb/exec",
+  "apiScriptUrl": "https://script.google.com/macros/s/AKfycbxYqOjf2PqsG66QCQOi8IqPiZ3w2ipbXkj6nAfQi8ziBH9RaKlBEFF86RfcSc60G0JUeA/exec",
   "title": "Итоговый экзамен: Комплексное тестирование курса",
   "subtitle": "Проверка знаний по дисциплине «Линии связи и телекоммуникации»"
 };
@@ -5641,7 +5641,7 @@
       startFinalExamBtn.disabled = true;
       startFinalExamBtn.textContent = '⏳ Проверка регистрации...';
 
-      const apiUrl = EXAM_CONFIG.apiScriptUrl || 'https://script.google.com/macros/s/AKfycbxYqOjf2PqsG66QCQOi8IqPiZ3w2ipbXkj6nAfQi8ziBH9RaKlBEFF86RfcSc60G0JUeA/exec';
+      
       const checkPayload = {
         fio: fio,
         group: group,
@@ -5842,7 +5842,7 @@
       updateTotalProgress();
       updateGradebookUI();
 
-      const apiUrl = EXAM_CONFIG.apiScriptUrl || 'https://script.google.com/macros/s/AKfycbxYqOjf2PqsG66QCQOi8IqPiZ3w2ipbXkj6nAfQi8ziBH9RaKlBEFF86RfcSc60G0JUeA/exec';
+      
       const payload = {
         fio: fio,
         group: group,
@@ -6073,7 +6073,7 @@
     });
 
     // АВТОРИЗАЦИЯ СТУДЕНТА (Интеграция с Google Таблицей - лимит 30 человек)
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxL7hXD8uzoHGOD0m-XLIN9MIdN-0XtABqh9ON0hpyNGmfim4lcxDA5Kg0waCk0ac3M/exec';
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxYqOjf2PqsG66QCQOi8IqPiZ3w2ipbXkj6nAfQi8ziBH9RaKlBEFF86RfcSc60G0JUeA/exec';
     const authLoadingText = document.getElementById('authLoadingText');
 
     openAuthModalBtn.addEventListener('click', () => {
@@ -6128,6 +6128,16 @@
         });
 
         const result = await response.json().catch(() => null);
+
+        if (result && result.success === false) {
+  isLimitReached = true;
+  authError.textContent = result.error || 'Ошибка регистрации. Обратитесь к преподавателю.';
+  authError.style.display = 'block';
+  if (authLoadingText) authLoadingText.style.display = 'none';
+  submitAuthBtn.disabled = false;
+  submitAuthBtn.textContent = 'Войти на портал';
+  return;
+}
 
         if (result && result.status === 'limit_reached') {
           isLimitReached = true;
