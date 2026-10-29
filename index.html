@@ -5641,7 +5641,7 @@
       startFinalExamBtn.disabled = true;
       startFinalExamBtn.textContent = '⏳ Проверка регистрации...';
 
-      
+      const apiUrl = EXAM_CONFIG.apiScriptUrl;
       const checkPayload = {
         fio: fio,
         group: group,
@@ -5842,7 +5842,7 @@
       updateTotalProgress();
       updateGradebookUI();
 
-      
+      const apiUrl = EXAM_CONFIG.apiScriptUrl;
       const payload = {
         fio: fio,
         group: group,
