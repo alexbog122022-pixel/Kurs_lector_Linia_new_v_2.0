@@ -5649,7 +5649,7 @@
         score: 0,
         version: 'v2'
       };
-
+const apiUrl = EXAM_CONFIG.apiScriptUrl;
       try {
         const resp = await fetch(apiUrl, {
           method: 'POST',
@@ -5848,7 +5848,7 @@
         group: group,
         score: correctCount
       };
-
+const apiUrl = EXAM_CONFIG.apiScriptUrl;
       try {
         const response = await fetch(apiUrl, {
           method: 'POST',
